@@ -17,8 +17,10 @@ function clearCookie(name) {
   return `${name}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
 }
 
+const PRIVATE_HOST = /^(localhost|.*\.(localhost|local|internal|netlify\.app)|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|169\.254\.\d+\.\d+|0\.0\.0\.0|\[?::1\]?|\[?fc[0-9a-f]{2}:.*|\[?fd[0-9a-f]{2}:.*|\[?fe80:.*)$/i;
+
 function isAllowed(hostname) {
-  return hostname.endsWith(".vercel.app");
+  return hostname.includes(".") && !PRIVATE_HOST.test(hostname);
 }
 
 function fetchDest(request) {
@@ -97,7 +99,6 @@ function buildRequestHeaders(request) {
 function toProxyPath(link, origin) {
   const u = new URL(link, origin);
   if (u.origin === origin) return u.pathname + u.search + u.hash;
-  if (isAllowed(u.hostname)) return `/proxy/${encodeURIComponent(u.toString())}`;
   return null;
 }
 
@@ -148,6 +149,10 @@ export default async (request, context) => {
   const url = new URL(request.url);
 
   try {
+    if (url.pathname === "/logo.svg") {
+      return context.next();
+    }
+
     if (url.pathname === HOME_PATH) {
       const page = await context.rewrite("/index.html");
       const headers = new Headers(page.headers);
@@ -165,8 +170,8 @@ export default async (request, context) => {
       targetUrl = targetUrl.replace(/^(https?:)\/+/, "$1//");
 
       const target = new URL(targetUrl);
-      if (!isAllowed(target.hostname)) {
-        return new Response("Only .vercel.app sites are allowed", { status: 403 });
+      if (!/^https?:$/.test(target.protocol) || !isAllowed(target.hostname)) {
+        return new Response("This host is not allowed", { status: 403 });
       }
 
       if (isDocumentRequest(request)) {

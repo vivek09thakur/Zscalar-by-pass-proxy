@@ -4,17 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="dark" />
-  <title>Zscalar Proxy ByPass For Vercel</title>
+  <title>Zscalar Proxy ByPass</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen grid place-items-center bg-slate-900 text-slate-200 p-6 antialiased">
   <main class="w-full max-w-sm text-center">
-    <h1 class="text-base font-medium text-slate-50 mb-5">Zscalar Proxy ByPass For Vercel</h1>
+    <img src="/logo.svg" alt="" class="w-12 h-12 mx-auto mb-4" />
+    <h1 class="text-base font-medium text-slate-50 mb-5">Zscalar Proxy ByPass</h1>
     <form onsubmit="go(event)" class="flex h-11 rounded-lg bg-slate-950 border border-slate-700 focus-within:border-blue-500 overflow-hidden">
       <input
         id="url"
         type="text"
-        placeholder="your-project.vercel.app"
+        placeholder="example.com"
         required
         autocomplete="off"
         autofocus
@@ -35,7 +37,7 @@
         <span class="block px-3 py-1.5 rounded-md text-slate-400 peer-checked:bg-blue-500 peer-checked:text-white">Windowed</span>
       </label>
     </div>
-    <p class="mt-4 text-xs text-slate-500">Only <code>.vercel.app</code> sites. Return to <code>/_home</code> to switch sites.</p>
+    <p class="mt-4 text-xs text-slate-500">Return to <code>/_home</code> to switch sites.</p>
   </main>
 
   <script>
