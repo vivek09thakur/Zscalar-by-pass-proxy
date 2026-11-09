@@ -144,7 +144,7 @@ async function proxyTo(targetUrl, request) {
   }
 
   const newHeaders = new Headers(response.headers);
-  for (const h of ["content-security-policy", "content-security-policy-report-only", "x-frame-options", "content-encoding", "content-length", "transfer-encoding"]) {
+  for (const h of ["content-security-policy", "content-security-policy-report-only", "x-frame-options", "content-encoding", "content-length", "transfer-encoding", "service-worker-allowed", "set-cookie"]) {
     newHeaders.delete(h);
   }
   if (contentType.includes("text/html")) {
@@ -164,10 +164,17 @@ export default async (request, context) => {
       return context.next();
     }
 
+    // A proxied site can register a service worker on this origin that hijacks every later navigation.
+    if (fetchDest(request) === "serviceworker") {
+      return new Response("Service workers are not allowed", { status: 403 });
+    }
+
     if (url.pathname === HOME_PATH) {
       const page = await context.rewrite("/index.html");
       const headers = new Headers(page.headers);
       headers.set("Cache-Control", "no-store");
+      // Wipes cached redirects, service workers and storage left behind by previously proxied sites.
+      headers.set("Clear-Site-Data", '"cache", "storage"');
       headers.append("Set-Cookie", clearCookie(ORIGIN_COOKIE));
       headers.append("Set-Cookie", clearCookie(MODE_COOKIE));
       return new Response(page.body, { status: page.status, headers });
