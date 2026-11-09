@@ -43,7 +43,14 @@ function isUserInitiatedNavigation(request) {
 }
 
 function redirect(location, status = 302, extraHeaders = {}) {
-  return new Response(null, { status, headers: { Location: location, ...extraHeaders } });
+  return new Response(null, { status, headers: { Location: location, "Cache-Control": "no-store", ...extraHeaders } });
+}
+
+// Browsers cache 301/308 permanently; the same proxy path can map to different sites.
+function temporaryStatus(status) {
+  if (status === 301) return 302;
+  if (status === 308) return 307;
+  return status;
 }
 
 function htmlResponse(html, extraHeaders) {
@@ -117,7 +124,7 @@ async function proxyTo(targetUrl, request) {
     const location = response.headers.get("Location");
     if (location) {
       const mapped = toProxyPath(location, origin) ?? new URL(location, targetUrl).toString();
-      return redirect(mapped, response.status, { "Set-Cookie": setCookie(ORIGIN_COOKIE, origin) });
+      return redirect(mapped, temporaryStatus(response.status), { "Set-Cookie": setCookie(ORIGIN_COOKIE, origin) });
     }
   }
 
@@ -140,6 +147,10 @@ async function proxyTo(targetUrl, request) {
   for (const h of ["content-security-policy", "content-security-policy-report-only", "x-frame-options", "content-encoding", "content-length", "transfer-encoding"]) {
     newHeaders.delete(h);
   }
+  if (contentType.includes("text/html")) {
+    newHeaders.set("Cache-Control", "no-store");
+    newHeaders.delete("Expires");
+  }
   newHeaders.append("Set-Cookie", setCookie(ORIGIN_COOKIE, origin));
 
   return new Response(body, { status: response.status, headers: newHeaders });
@@ -156,7 +167,9 @@ export default async (request, context) => {
     if (url.pathname === HOME_PATH) {
       const page = await context.rewrite("/index.html");
       const headers = new Headers(page.headers);
+      headers.set("Cache-Control", "no-store");
       headers.append("Set-Cookie", clearCookie(ORIGIN_COOKIE));
+      headers.append("Set-Cookie", clearCookie(MODE_COOKIE));
       return new Response(page.body, { status: page.status, headers });
     }
 
